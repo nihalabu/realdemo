@@ -1,6 +1,7 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize Groq instead of GoogleGenerativeAI
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const SYSTEM_PROMPT = `You are Maya, a helpful AI assistant for Apex Realty, a premium real estate agency.
 
@@ -31,36 +32,49 @@ export async function POST(request) {
   // Keep only the last 12 messages to limit token usage
   const recentMessages = messages.slice(-12);
 
-  const lastMessage = recentMessages[recentMessages.length - 1];
-  const history = recentMessages.slice(0, recentMessages.length - 1).map((msg) => ({
-    role: msg.role === "assistant" ? "model" : "user",
-    parts: [{ text: msg.content }],
+  // 1. Format messages for Groq.
+  // Groq uses 'assistant' instead of 'model', and 'content' instead of 'parts: [{ text }]'
+  const formattedMessages = recentMessages.map((msg) => ({
+    role: msg.role === "model" ? "assistant" : msg.role,
+    content: msg.content,
   }));
 
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    systemInstruction: SYSTEM_PROMPT,
+  // 2. Inject the system prompt as the very first message in the array
+  formattedMessages.unshift({
+    role: "system",
+    content: SYSTEM_PROMPT,
   });
 
   try {
-    const chat = model.startChat({
-      history: history,
+    // 3. Call the Groq chat completion endpoint
+    const chatCompletion = await groq.chat.completions.create({
+      messages: formattedMessages,
+      model: "llama-3.1-8b-instant", // The fast model with 14,400 free daily requests
     });
 
-    const result = await chat.sendMessage(lastMessage.content);
-    const response = await result.response;
-    const replyText = response.text();
+    // 4. Extract the reply string
+    const replyText = chatCompletion.choices[0]?.message?.content || "";
 
     return Response.json({
       message: replyText,
     });
   } catch (error) {
-    console.error("Gemini API error:", error);
+    console.error("Groq API error:", error);
+    
+    // Extract the error status from the Groq SDK
     const status = error?.status || 500;
-    const errorMessage =
-      status === 429
-        ? "I'm getting too many requests right now. Please wait a moment and try again."
-        : "Sorry, something went wrong. Please try again.";
+    
+    let errorMessage = "Sorry, something went wrong on our end. Please try again in a moment.";
+
+    // If the client triggers a 429 Rate Limit (RPM or TPM)
+    if (status === 429) {
+      errorMessage = "I'm processing a lot of property requests at the moment! Please give me just 30 to 60 seconds to pull up the details, and ask me again.";
+    } 
+    // If Groq's servers experience a brief 503/500 overload
+    else if (status === 503 || status === 500) {
+      errorMessage = "Apex Realty's database is undergoing a quick update. Let me try that again for you in a brief moment!";
+    }
+
     return Response.json({ message: errorMessage }, { status });
   }
 }
