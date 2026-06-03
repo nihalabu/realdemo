@@ -24,3 +24,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(139, 41, 38, 0.45); }
+  70%  { box-shadow: 0 0 0 14px rgba(139, 41, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 41, 38, 0); }
+}
+
+.fab-pulse {
+  animation: pulse-ring 2s ease-out infinite;
+}
