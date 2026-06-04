@@ -9,6 +9,9 @@ export default function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [leadData, setLeadData] = useState({ name: "", email: "", phone: "" });
 
   // Open handler — stable reference
   const openChat = useCallback(() => {
@@ -102,6 +105,9 @@ export default function ChatWidget() {
       const data = await response.json();
       const assistantMessage = { role: "assistant", content: data.message };
       setMessages([...updatedMessages, assistantMessage]);
+      if (data.message.includes("could I grab your details")) {
+        setShowLeadForm(true);
+      }
     } catch {
       setMessages([
         ...updatedMessages,
@@ -114,6 +120,26 @@ export default function ChatWidget() {
 
   function handleKeyDown(e) {
     if (e.key === "Enter") sendMessage();
+  }
+  async function handleLeadSubmit() {
+    const { name, email, phone } = leadData;
+    if (!name || !email || !phone) return;
+
+    setLeadSubmitted(true);
+    setShowLeadForm(false);
+
+    try {
+        fetch("/api/capture-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone }),
+      });
+    } catch (err) {
+      console.error("Failed to save lead:", err);
+    }
+
+    // Continue conversation
+    sendMessage(`My name is ${name}, email is ${email}, and phone is ${phone}`);
   }
 
   return (
@@ -453,6 +479,68 @@ export default function ChatWidget() {
                     </span>
                   </div>
                 </div>
+              </div>
+            )}
+            {showLeadForm && !leadSubmitted && (
+              <div style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #cecaca",
+                borderRadius: "10px",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                marginTop: "4px"
+              }}>
+                <p style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "#1a1a1a",
+                  margin: 0
+                }}>
+                  Please fill in your details:
+                </p>
+
+                {["name", "email", "phone"].map((field) => (
+                  <input
+                    key={field}
+                    type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+                    placeholder={field === "name" ? "Full Name" : field === "email" ? "Email Address" : "Phone Number"}
+                    value={leadData[field]}
+                    onChange={(e) => setLeadData(prev => ({ ...prev, [field]: e.target.value }))}
+                    style={{
+                      height: "42px",
+                      border: "1px solid #cecaca",
+                      borderRadius: "5px",
+                      padding: "0 14px",
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 300,
+                      fontSize: "13px",
+                      outline: "none",
+                      color: "#000000",
+                    }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = "#8d2926"}
+                    onBlur={(e) => e.currentTarget.style.borderColor = "#cecaca"}
+                  />
+                ))}
+
+                <button
+                  onClick={handleLeadSubmit}
+                  style={{
+                    backgroundColor: "#8d2926",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "5px",
+                    height: "42px",
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Submit
+                </button>
               </div>
             )}
             <div ref={messagesEndRef} />
