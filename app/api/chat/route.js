@@ -2,7 +2,7 @@ import Groq from "groq-sdk";
 
 // Initialize Groq instead of GoogleGenerativeAI
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
+ 
 const SYSTEM_PROMPT = `You are Maya, a helpful AI assistant for Apex Realty, a premium real estate agency.
 
 Your goal is to help website visitors find the right property and connect them with an agent.

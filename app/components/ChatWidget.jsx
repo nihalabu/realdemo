@@ -52,9 +52,9 @@ export default function ChatWidget() {
           100% { box-shadow: 0 0 0 0 rgba(141, 41, 38, 0); }
         }
         @keyframes fadeInBubble {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         .premium-fab-pulse {
           animation: pulseRing 2.2s cubic-bezier(0.25, 0, 0, 1) infinite !important;
         }
@@ -76,6 +76,38 @@ export default function ChatWidget() {
         }
         .dot-flashing-span:nth-child(3) {
           animation-delay: 0.4s;
+        }
+        .chat-panel {
+          margin-bottom: 29px;
+          width: 400px;
+          height: 600px;
+          background-color: #ffffff;
+          border-radius: 10px;
+          border: 1px solid #cecaca;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          font-family: 'Poppins', sans-serif;
+        }
+        @media (max-width: 480px) {
+          .chat-panel {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            border: none !important;
+            z-index: 10000;
+          }
+          .chat-fab-wrapper {
+            bottom: 20px !important;
+            right: 20px !important;
+          }
+          .chat-bubble-preview {
+            right: 0 !important;
+            width: 180px !important;
+          }
         }
       `;
       document.head.appendChild(style);
@@ -143,9 +175,9 @@ export default function ChatWidget() {
   }
 
   return (
-    <div style={{ position: "fixed", bottom: "35px", right: "35px", zIndex: 9999 }}>
+    <div className="chat-fab-wrapper" style={{ position: "fixed", bottom: "35px", right: "35px", zIndex: 9999 }}>
       {!isOpen && (
-        <div style={{
+        <div className="chat-bubble-preview" style={{
           position: 'absolute',
           bottom: '72px',
           right: '0',
@@ -177,18 +209,7 @@ export default function ChatWidget() {
       )}
       {isOpen && (
         <div
-          style={{
-            marginBottom: "29px",
-            width: "400px",
-            height: "600px",
-            backgroundColor: "#ffffff",
-            borderRadius: "10px",
-            border: "1px solid #cecaca",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            fontFamily: "'Poppins', sans-serif",
-          }}
+          className="chat-panel"
         >
           {/* Premium Header */}
           <div
